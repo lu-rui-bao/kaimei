@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>可编辑评分表生成工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+           
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 10px
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            min-height: calc(90vh - 150px)
+        }
+
+        .sidebar {
+            width: 50%;
+            height: 80vh;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+            padding: 12px;
+            overflow-y: auto
+        }
+
+        .main-content {
+            width: 50%;
+            max-height: 80vh;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+            padding: 12px;
+            overflow-y: auto
+        }
+
+        .option-group {
+            margin-bottom: 12px
+        }
+
+        /* ======== 左侧组标题高亮 ======== */
+        .option-group h3 {
+            font-size: 17px;
+            /* 字号再大一号 */
+            font-weight: 700;
+            /* 特粗 */
+            color: #fff;
+            /* 白色字 */
+            background: linear-gradient(90deg, #2c3e50 0%, #3498db 100%);
+            padding: 8px 10px;
+            /* 上下左右留空 */
+            margin: 0 0 10px 0;
+            /* 与下方按钮拉开距离 */
+            border-radius: 4px;
+            /* 小圆角 */
+            letter-spacing: 1px;
+            /* 字间距，看起来更高级 */
+            user-select: none;
+            /* 防止误选 */
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px
+        }
+
+        .option-name {
+            flex: 1;
+            padding: 6px 8px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+            text-indent: 2em;
+            line-height: 1.6;
+            /* 行距舒服一点 */
+            white-space: pre-wrap;
+            /* 关键：自动换行 + 识别 \n */
+            word-break: break-all;
+            /* 英文单词过长也断开 */
+            text-indent: 0;
+            /* 去掉整段缩进，如果想首行缩进用 2em */
+        }
+
+        .option-btn {
+            width: 100px;
+            height: 60px;
+            padding: 4px 6px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px
+        }
+
+        .option-btn {
+            transition: transform .12s
+        }
+
+        .option-btn:active {
+            transform: scale(.96)
+        }
+
+
+        .option-btn:hover {
+            background: #2980b9
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #f2f2f2;
+            font-weight: bold
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit
+        }
+
+        .editable {
+            cursor: pointer;
+            transition: background .2s
+        }
+
+        .editable:hover {
+            background: #e6f7ff
+        }
+
+        .editing {
+            background: #e6f8ff;
+            outline: 2px solid #1890ff
+        }
+
+        .btn-bar {
+            width: 50%;
+            margin: 12px 0 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 12px
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #fff;
+            background: #27ae60
+        }
+
+        .export-btn:hover {
+            background: #219a53
+        }
+
+        .static-txt {
+            user-select: text;
+            /* 允许复制 */
+            pointer-events: none;
+            /* 禁止点击，杜绝意外编辑 */
+            color: #333;
+        }
+
+        /* 按钮未选 */
+        .option-btn {
+            background: #3498db;
+        }
+
+        /* 按钮已选 */
+        .option-btn.selected {
+            background: #27ae60;
+            font-weight: bold;
+            border: 2px solid #219a53;
+        }
+
+        #scoreTable thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fafbfc;
+            box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .06);
+        }
+    </style>
+    <base target="_blank">
+</head>
+
+<body>
+    <div class="header">
+        <h1>可编辑评分表生成工具</h1>
+        <p>编辑评分表并导出完整文档</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar" id="leftPanel"></div>
+        <div class="main-content">
+            <table id="scoreTable"></table>
+        </div>
+    </div>
+    <!-- 仅保留导出按钮 -->
+    <div class="btn-bar">
+        <button class="export-btn" onclick="exportToWord()">导出Word文档</button>
+    </div>
+
+    <script>
+        /* ====== 维护入口：只改这里 ====== */
+        const groups = [
+            {
+                title: '投标报价',
+                id: 'priceBid',
+                options: [
+                    {
+                        desc: `1、评标基准价确定规则：
+（1）投标人不足5家：采用所有有效投标人投标报价的算术平均值作为评标基准价，计算公式：基准价 = (报价1 + 报价2 + ... + 报价N) / N。
+（2）投标人数量≥5家时：采用“去高低均价法”确定基准价：去除一个最高报价，去除一个最低报价，计算剩余报价的算术平均值，计算公式：基准价 = (排序后报价2 + 报价3 + ... + 报价N-1) / (N-2)。
+
+2、价格得分计算方法（得分保留小数）：
+（1）基准价得分规则：基准价对应得分30分（满分）；
+（2）偏离扣分规则（扣分上限不超过30分）：每高于基准价1%扣0.5分，每低于基准价1%扣0.5分；
+（3）具体计算公式：
+    ①报价高于基准价时：得分 = 30 + [(投标报价/评标基准价 - 1) × 0.5 × 30]；
+    ②报价低于基准价时：得分 = 30 - [(1 - 投标报价/评标基准价) × 0.5 × 30]。
+
+3、异常低价处理机制：
+（1）识别标准：报价低于其他有效报价10%及以上，或评标委员会认为可能影响产品质量、合同履约能力；
+（2）举证要求：书面说明（含成本构成分析），相关证明材料：原材料采购凭证、生产工艺说明、履约能力证明；
+（3）处理结果：通过审查继续参与评审，未能证明视为恶意竞价，作无效标处理。`,
+                        name: '基准价评分法'
+                    },   // name=按钮名，desc=展示框内容
+
+                    {
+                        name: '平均价中标法', desc: `1、参与规则：
+（1）投标人不足5家：采用所有有效投标人投标报价参与计算。
+（2）投标人数量≥5家时：采用“去高低均价法”确定有效投标人投标报价参与计算（去除一个最高报价，去除一个最低报价，剩余报价为有效投标人投标报价）。
+
+2、平均价判定方法：所有有效投标人投标报价的算术平均值即为平均价。
+
+3、异常低价处理机制：
+（1）识别标准：报价低于其他有效报价10%及以上，或评标委员会认为可能影响产品质量、合同履约能力；
+（2）举证要求：书面说明（含成本构成分析），相关证明材料：原材料采购凭证、生产工艺说明、履约能力证明；
+（3）处理结果：通过审查继续参与评审，未能证明视为恶意竞价，作无效标处理。` },
+                    {
+                        name: '次低价中标法', desc: `1、参与排序规则：
+（1）投标人不足5家：采用所有有效投标人投标报价参与排序。
+（2）投标人数量≥5家时：采用“去高低均价法”确定有效投标人投标报价参与排序（去除一个最高报价，去除一个最低报价，剩余报价为有效投标人投标报价）。
+
+2、次低价判定方法：
+（1）参与排序的有效投标人投标报价从低到高（1、2、3、...）进行排序；
+（2）排序1为最低价，排序2即为次低价。
+
+3、异常低价处理机制：
+（1）识别标准：报价低于其他有效报价10%及以上，或评标委员会认为可能影响产品质量、合同履约能力；
+（2）举证要求：书面说明（含成本构成分析），相关证明材料：原材料采购凭证、生产工艺说明、履约能力证明；
+（3）处理结果：通过审查继续参与评审，未能证明视为恶意竞价，作无效标处理。` 
+                    }
+                ]
+            },
+            {
+                title: '满足技术程度',
+                id: 'techLevel',
+                options: [
+                    {
+                        name: '完全满足', desc: `1、完全满足招标文件全部技术指标要求，得基础分5分。
+
+2、扣分规则：
+（1） 配置不详、技术参数不符、缺漏项，每处扣0.5分；
+（2） 出现负偏离，每项扣1分。
+
+3、同一条款同时存在缺漏与负偏离的，按“负偏离”扣1分，不重复扣分。
+4、各项扣分累计，扣完5分为止。
+5、未提供任何技术响应材料者，本项得0分。` 
+                    },
+
+                    { name: '大部分满足', desc: '大部分满足：≥80%技术指标符合要求。' },
+                    { name: '基本满足', desc: '基本满足：≥60%技术指标符合要求。' }
+                ]
+            },
+            {
+                title: '技术方案',
+                id: 'techPlan',
+                options: [
+                    {
+                        name: '方案完整先进', desc: `1、设计契合度（10分）
+平面布置、产品三视图、效果图完整，风格与使用场景匹配，符合人体工学。优秀8–10分，良好5–7分，一般1–4分，缺失0分。（进行完整性审查，缺类则对应项直接0分）
+
+2、制作工艺（5分）
+工艺流程、设备清单、质量控制点、成品验收标准清晰。优4–5分，良2–3分，一般0–1分。（按提供证据充分性、先进性、细节深度横向对比）
+
+3、功能与结构（5分）
+结构合理、拆装方便、走线/通风/称重等满足要求；提供专利证书证明功能性创新。优4–5分，良2–3分，一般0–1分。
+
+4、供货安装方案（5分）
+进度计划、包装运输、成品保护；节点可控、风险预案齐全。优4–5分，良2–3分，一般0–1分。`
+                    },
+
+                    { name: '方案合理可行', desc: '方案合理可行：技术路线合理，无重大缺陷。' },
+                    { name: '方案基本可行', desc: '方案基本可行：技术路线基本合理，有少量缺陷。' }
+                ]
+            },
+            {
+                title: '施工计划',
+                id: 'constructionPlan',
+                options: [
+                    {
+                        name: '5个方案以上', desc: `1、投标人须提交详实的实施方案，内容应完整涵盖以下五个方面：
+（1）人员配备及安排；
+（2）建设进度计划及保证措施；
+（3）安装调试程序与措施；
+（4）质量保证措施；
+（5）安全文明施工措施。
+
+2、评分方式：
+（1）完整性审查（基础分，3分）：
+五项内容齐全，且每项均有实质性描述的，得基础分3分；每缺漏一项，扣1分，扣完为止；未提供方案者，整项不得分。
+（2）横向对比评分（优中选优，附加2分）：
+在满足完整性要求的基础上，由评委对各投标人的实施方案进行横向比较，重点考察内容的科学性、针对性、可操作性、先进性等方面。
+        ①方案内容详实、措施具体、逻辑严谨、明显优于其他投标人的，加2分；
+        ②方案内容较为完善，有一定亮点，部分方面优于其他投标人的，加1分；
+        ③方案内容一般，无明显优势的，不加分。`
+                    },
+
+                    { name: '方案', desc: '方案：2个。' },
+                    { name: '方案', desc: '方案：1个。' }
+                ]
+            },
+            {
+                title: '制造商生产能力',
+                id: 'capability',
+                options: [
+                    {
+                        name: '制造商生产能力', desc: `1、所投产品制造商须具备对应产能，并提供以下10类主要生产设备权属证明（发票或租赁合同，任一种即可）：
+（1）电脑裁板锯；
+（2）直线封边机；
+（3）推台锯；
+（4）液压冷压机；
+（5）全自动涂胶机；
+（6）刨床；
+（7）全自动电脑木材烘干机；
+（8）全自动打磨抛光机；
+（9）废气综合治理工程；
+（10）多排钻。
+
+2、评分规则：
+（1）10项全部提供得5分；
+（2）每缺少1项扣0.5分；
+（3）缺5项（含）以上本项得0分。`
+                    },
+
+                    { name: '31-45天', desc: '31-45天：31-45天。' },
+                    { name: '46-60天', desc: '46-60天：46-60天。' }
+                ]
+            },
+            {
+                title: '产品品质',
+                id: 'quality',
+                options: [
+                    {
+                        name: '产品品质', desc: `1、投标人或制造商须提供自2021年1月起至招标公告发布之日止，由省级及以上质量监督检验中心（CMA认证）出具的成品检测报告，检测范围须包含以下8类产品：
+1. 办公桌，2. 会议椅，3. 茶水柜，4. 文件柜，5. 会议桌，6. 沙发，7. 茶几，8. 床
+
+2、评分规则：
+（1）每提供1份对应产品检测报告得0.5分；
+（2）满分4分，累计不超过4分；
+（3）同类别产品多份报告仅计0.5分，不重复得分；
+（4）报告须清晰显示产品名称、检验依据、结论、检验机构公章及有效期；
+（5）未提供扫描件或无法辨认的，该类别不计分。`
+                    },
+
+                    { name: '优', desc: '优' },
+                    { name: '一般', desc: '一般' }
+                ]
+            },
+            {
+                title: '材料性能',
+                id: 'materialQuality',
+                options: [
+                    { name: '中密度纤维板（MDF板）', desc: `中密度纤维板（MDF板），砂光板面质量要求：无分层、鼓泡或炭化，无局部松软，无板边缺损，无油污斑点或异物，无压痕。密度≥0.73g/cm³，含水率≤4.7%。物理力学性能：静曲强度≥34.5MPa，弹性模量≥4480MPa，内胶合强度≥0.8MPa，表面胶合强度≥1.88MPa，吸水厚度膨胀率≤1.7%。防潮性能：70℃水浸渍处理后静曲强度≥7.6MPa，内胶合强度（煮沸-干燥法）≥0.14MPa。握螺钉力，板面1220N，板边930N，24h吸水率9.0%，防静电性能2.2×10⁵Ω。甲醛释放量（1m³气候箱法）ENF≤0.025mg/m³，挥发性有机化合物苯、甲苯、二甲苯均未检出，总挥发性有机化合物（TVOC）未检出。抗菌性能：金黄色葡萄球菌抑菌率99.95%，肺炎链球菌抑菌率99.98%。防霉菌性能：桔灰青霉防霉菌等级0级，马氏拟青霉防霉菌等级0级。` },
+                    { name: '高密度纤维板（HDF板）', desc: `高密度纤维板（HDF板），甲醛释放量（1m³气候箱法）ENF≤0.014（54h）。挥发性有机化合物（72h）苯、甲苯、二甲苯≤2μg/m³，总挥发性有机化合物（TVOC）≤20μg/m³。防潮性能（煮沸-干燥法）内胶合强度达到0.32MPa，24h吸水率≤6.1%，防静电性能达到2.1×10⁵Ω。抗菌性能：金黄色葡萄球菌抑菌率≥99.93%(培养24h)，肺炎链球菌抑菌率≥99.96%(培养24h)。防霉菌性能：对桔灰青霉、马氏拟青霉等防霉菌等级达到0级（不长）。外观质量要求无分层、鼓泡或炭化，无局部松软，无边角缺损，无油污、斑点或异物，无压痕、砂痕。密度＞0.85g/cm³，板内密度偏差为+0.5%，含水率≤4.7%，静曲强度≥38.0MPa，弹性模量≥4590MPa，内结合强度≥1.00MPa，表面结合强度≥1.80MPa，吸水厚度膨胀率≤3.0%。垂直板面握螺钉力达到1360N，板边达到1130N。` },
+                    { name: '浸渍胶膜纸饰面刨花板（三聚氰胺板）', desc: `浸渍胶膜纸饰面刨花板（三聚氰胺板），外观质量（最少15个检测项）检测合格，规格尺寸及偏差（最少6个检测项）检测合格。含水率≤4.3%，密度≥0.72g/cm³。表面耐香烟灼烧达到5级，甲醛释放量（1m³气候箱法）≤0.012mg/m³（54h）（E1）、ENF≤0.012mg/m³（54h）。挥发性有机化合物（72h）苯、甲苯、二甲苯、总挥发性有机化合物（TVOC）未检出。24h吸水率8.8%。防静电性能2.2×10⁵Ω。金黄色葡萄球菌抑菌率99.93%，肺炎链球菌抑菌率99.95%。桔灰青霉防霉菌等级0级（不长），马氏拟青霉防霉菌等级0级（不长）。` },
+                    { name: '实木多层板（生态板）', desc: `实木多层板（生态板），ENF级甲醛释放量（1m³气候箱法）结果未检出，挥发性有机化合物（苯、甲苯、二甲苯）结果未检出，总挥发性有机化合物（TVOC）结果未检出。24h吸水率6.7%。防潮性能（煮沸-干燥法）内胶合强度≥0.17MPa。防静电性能检测结果为2.0×10⁵Ω。抗菌性能：金黄色葡萄球菌抑菌率99.95%，肺炎链球菌抑菌率99.97%。防霉菌性能：桔灰青霉防霉菌等级0级，马氏拟青霉防霉菌等级0级。含水率≤6%，胶合强度≥1.81MPa，浸渍剥离开胶的累计长度≤13mm，静曲强度（顺纹）≥46.3MPa，静曲强度（横纹）≥40.9MPa，弹性模量（顺纹）≥6620MPa，弹性模量（横纹）≥6050MPa。` },
+                    { name: '实木皮（天然实木片）', desc: `实木皮（天然实木片），单板含水率≤7%，具有装饰效果，无活节，无死节、孔洞、夹皮、树脂道等，无半活节，无死节、虫洞、孔洞，无夹皮，无树脂道、树胶道，无变色，无腐朽，无裂缝，无毛刺、刀痕、锯痕、划痕，无边、角缺损。有害物质限量，甲醛释放量（9-11L干燥器法）结果未检出。` },
+                    { name: 'PUR激光封边条', desc: `PUR激光封边条，表面光滑，耐磨性：磨30r后应无露底现象。耐开裂性（耐龟裂性）达到1级。耐老化性检测结果无开裂。甲醛释放量未检出，塑料封边条有害物质限量邻苯二甲酸酯（DBP、BBP、DEHP、DNOP、DINP和DIDP)的总量未检出。` },
+                    { name: '水溶性胶粘剂（白乳胶）', desc: `水溶性胶粘剂（白乳胶），水基型胶粘剂中有害物质限量值（游离甲醛、苯、甲苯+二甲苯）未检出，总挥发性有机物≤11g/L。急性皮肤刺激性/腐蚀性试验结果为无刺激性。水基型建筑胶粘剂中有毒有害物质的限量要求（甲苯+乙苯+二甲苯）未检出。` },
+                    { name: '质热熔胶（封边胶）', desc: `质热熔胶（封边胶），急性皮肤刺激性/腐蚀性试验结果无刺激性，本体型胶粘剂中有害物质限量值总挥发性有机物≤5g/L，游离甲苯二异氰酸酯结果未检出、苯未检出、甲苯+乙苯+二甲苯未检出。` },
+                    { name: '水性面漆（水性涂料）', desc: `水性面漆（水性涂料），有害物质限量：VOC含量未检出，甲醛含量未检出，总铅（Pb）含量未检出，可溶性重金属含量［镉(Cd)铬(Cr)汞(Hg)］未检出，苯系物总和含量［苯、甲苯、二甲苯 (含乙苯)］未检出。工业涂料中有害物质限量：卤代烃未检出。急性皮肤刺激性/腐蚀性试验结果为无刺激性。硬度达到4H，附着力为0级，耐划伤性、耐污染性测试结果合格，耐干热性达到1级。` },
+                    { name: '水性底漆（水性涂料）', desc: `水性底漆（水性涂料），有害物质限量：VOC含量未检出，甲醛含量未检出，总铅（Pb）含量未检出，可溶性重金属含量［镉(Cd)铬(Cr)汞(Hg)］未检出，苯系物总和含量［苯、甲苯、二甲苯 (含乙苯)］未检出。工业涂料中有害物质限量：卤代烃未检出。急性皮肤刺激性/腐蚀性试验结果为无刺激性。硬度达到4H，附着力为0级，耐划伤性、耐污染性测试结果合格，耐干热性达到1级。` },
+                    { name: '阻尼铰链（缓冲门铰）', desc: `阻尼铰链（缓冲门铰），过载：垂直静载荷，商用型/30kg，测试结果合格。水平静载荷，商用型/70N，测试结果合格。功能：操作力测试合格。垂直静载荷，商用型/20kg，测试结果合格。水平静载荷，商用型/40N，测试结果合格。耐腐蚀：18h无锈点，检测结果合格。乙酸盐雾试验（ASS）：连续喷雾600h，镀（涂） 层对基体的保护等级10级，镀（涂） 层本身耐腐蚀等级10级。` },
+                    { name: '阻尼导轨（缓冲导轨）', desc: `阻尼导轨（缓冲导轨）,乙酸盐雾试验（ASS）：连续喷雾600h，镀（涂） 层对基体的保护等级10级，镀（涂） 层本身耐腐蚀等级10级。过载：垂直向下静载荷，商用型/300N，测试结果合格。水平侧向静载荷，商用型/150N，测试结果合格。猛关或猛开，测试结果合格。功能：操作力测试合格。抽屉导轨组件底部变形/M，变形量不应超过内部尺寸（宽度和深度）最窄部分的1/75。抽屉导轨组件结构强度/200N，测试结果合格。垂直向下静载荷，商用型/200N，测试结果合格。水平侧向静载荷，商用型/100N，测试结果合格。拉出安全性，测试结果合格。猛关或猛开，测试结果合格。耐腐蚀：18h无锈点，检测结果合格。` },
+                    { name: '拉手', desc: `拉手，经乙酸盐雾试验(ASS)连续喷雾650h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级，外观性能要求金属件喷涂层应无漏喷、锈蚀和脱色、掉色现象，喷涂层应光滑均匀、色泽一致，应无流挂、疙瘩、皱皮、飞漆等缺陷。` },
+                    { name: '锁（锁具）', desc: `锁（锁具），乙酸盐雾试验（ASS）：连续喷雾600h，镀（涂） 层对基体的保护等级10级，镀（涂） 层本身耐腐蚀等级10级。保密度：钥匙不同牙花数≥625种，互开0.041率%，弹子锁锁头结构检测合格，锁舌伸出长度≥8mm。牢固度：锁头固定连接静拉力测试合格，锁头固定连接扭矩测试合格，锁芯拨动件扭矩测试合格，锁舌侧向静载荷测试合格，弹子锁、叶片锁使用寿命≥1万次。` },
+                    { name: '三合一连接件', desc: `三合一连接件，乙酸盐雾试验（ASS）连续喷雾600h，镀（涂）层对基体的保护等级10级，镀（涂）层本身耐腐蚀等级10级。连接件尺寸、锁紧角度检测合格。三合一偏心连接件偏心体抗压强度≥811N，三合一偏心连接件预埋螺母抗拉强度≥1284N，三合一偏心连接件中连接螺杆螺纹与预埋螺母的抗拉强度≥1290N，偏心体与连接螺杆的扭矩≥ 12 N。外观金属件表面无锈蚀、毛刺刃口、露底，光滑平整，无起泡、泛黄、花斑、烧焦、裂纹、划痕、磕碰伤等缺陷。焊接部位牢固,无脱焊、虚焊、焊穿，焊缝均匀，无毛刺、锐楞、飞溅、裂纹等缺陷。` },
+                    { name: '螺丝', desc: `螺丝，经乙酸盐雾试验(ASS)连续喷雾600h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级。` },
+                    { name: '人造革（PU皮）', desc: `人造革（PU皮），摩擦色牢度干擦变色：4-5级；沾色：4-5级（500次），湿擦变色：4-5级；沾色：4-5级（250次），碱性汗液变色：4-5级；沾色：4-5级（80次）。涂层粘着牢度≥8.5N/10mm。耐折牢度（50000次）无裂纹。耐磨性（CS-10，500g，500r）无明显损伤、剥落。撕裂力≥81N。pH≥3.6，pH稀释差（当pH值<4.0时，检验稀释差）≤0.1。游离甲醛未检出，挥发性有机物（VOC）未检出，可萃取重金属铅（Pb）、镉（Cd）未检出。禁用偶氮染料检测至少23项，结果未检出。有害物质限量值可分解有害芳香胺染料未检出。` },
+                    { name: '牛皮（真皮', desc: `牛皮（真皮），摩擦色牢度干擦变色：4-5级；沾色：4-5级（500次），湿擦变色：4-5级；沾色：4-5级（250次），碱性汗液变色：4-5级；沾色：4-5级（80次）。涂层粘着牢度≥8.6N/10mm。耐折牢度（50000次）无裂纹。耐磨性（CS-10，500g，500r）无明显损伤、剥落。撕裂力≥92N。pH≥3.9，pH稀释差（当pH值<4.0时，检验稀释差）≤0.1。游离甲醛未检出，挥发性有机物（VOC）未检出，可萃取重金属铅（Pb）、镉（Cd）未检出。禁用偶氮染料检测至少23项，结果未检出。有害物质限量值可分解有害芳香胺染料未检出。` },
+                    { name: '阻燃面料（阻燃布）', desc: `阻燃面料（阻燃布），染色牢度：耐水（变色≥4-5级；沾色≥ 4-5级），耐酸汗渍（变色≥4-5级；沾色≥ 4-5级），耐碱汗渍（变色≥4-5级；沾色≥ 4-5级），耐干摩擦（经向≥4-5级；纬向≥ 4-5级），耐唾液（变色≥4-5级；沾色≥ 4-5级）。可分解致癌芳香胺染料（24项）均未检出。pH值≥6.0。甲醛含量未检出。抗引燃特性-阴燃的香烟，评定该试样为阻燃Ⅰ级。` },
+                    { name: '海绵（阻燃海绵）', desc: `海绵（阻燃海绵），无刺激性气味。表观密度60.0kg/m³。25%压陷硬度达到184N，65%/25%压陷比≥2.3，75%压缩永久变形/≤3%，回弹率/≥56%，拉伸强度≥175KPa，伸长率/≥180%，撕裂强度≥2.4N/cm，干热老化后拉伸强度≥165KPa，干热老化后拉伸强度变化率/-6%，湿热老化后拉伸强度≥156KPa,湿热老化后拉伸强度变化率/-11%。` },
+                    { name: '气压棒（气弹簧）', desc: `气压棒（气弹簧），力特性启动力气弹簧的启动力应小于1.5F3、伸展速度应在70mm/s-150mm/s之间，密封性能气弹簧锁定在任意位置，经72h常温储存后，活塞杆不应发生位移，耐高温性能气弹簧经-30℃和60℃的高低温储存后，公称力Fα衰减量应不大于5%。经乙酸盐雾试验(ASS)连续喷雾600h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级。强度性能抗拉强度经轴向8000N拉力试验后无断裂或肢解。` },
+                    { name: '海绵胶（喷胶）', desc: `海绵胶（喷胶），溶剂型胶粘剂中有害物质限量值游离甲醛未检出、苯未检出、甲苯+二甲苯未检出、二氯甲烷、1，2二氯乙烷、1，1，2三氯乙烷、三氯乙烯未检出，总挥发性有机物≤111g/L，急性皮肤刺激性/腐蚀性试验结果无刺激性，溶剂型建筑胶粘剂中有毒有害物质的限量要求丙酮未检出，卤代烃未检出。` },
+                    { name: '实木方（橡胶木）', desc: `实木方（橡胶木），木材含水率≤10.2%，甲醛释放量（9-11L干燥器法）结果未检出，抗菌性能：肺炎克雷伯氏菌抑菌率99.95%，铜绿假单胞菌抑菌率99.98%。防霉菌性能：黑曲霉防霉菌等级0级，黄曲霉防霉菌等级0级。木材硬度：端面≥5456N；弦面≥5195N；径面≥ 5058N。气干密度≥0.625g/cm³，绝干密度≥0.618g/cm³，基本密度≥0.601g/cm³，木材pH值≥6.83，抗弯强度≥76.0MPa，抗弯弹性模量≥14100MPa，全干体积干缩率10.69%，气干体积干缩率8.42%。` },
+                    { name: '铝材（铝型材）', desc: `铝材（铝型材）外观性能要求金属件喷涂层检验合格，经乙酸盐雾试验(ASS)连续喷雾600h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级。` },
+                    { name: '冷轧钢板', desc: `冷轧钢板，外观性能要求金属件喷涂层应无漏喷、锈蚀和脱色、掉色现象，涂层应光滑均匀、色泽一致，应无流挂、疙瘩、皱皮、飞漆等缺陷。产品表面涂饰层/覆面材料理化性能金属喷漆（塑）涂层硬度≥3H，冲击强度（冲击高度400mm），应无剥落、裂纹、皱纹，附着力不低于1级，经乙酸盐雾试验(ASS)连续喷雾600h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级，化学成分（质量分数）C≤0.06%、Si≤0.05%、Mn≤0.14%、Cu≤0.01%、P≤0.012%、S≤0.008%、Ni≤0.02%、Cr≤0.04%、N≤0.006%，力学性能下屈服强度ReL≥322MPa，抗拉强度Rm≥520MPa，断后伸长率≥33%。` },
+                    { name: '喷涂钢管（复合钢管）', desc: `喷涂钢管（复合钢管），外观性能要求金属件喷涂层应无漏喷、锈蚀和脱色、掉色现象，喷涂层应光滑均匀、色泽一致，应无流挂、疙瘩、皱皮、飞漆等缺陷。金属喷漆（塑）涂层硬度≥2H，冲击高度400mm，无剥落、裂纹、皱纹，附着力不低于1级。经乙酸盐雾试验(ASS)连续喷雾600h或以上，镀（涂）层对基体的保护等级不低于10级，镀（涂）层本身耐腐蚀等级不低于10级。化学成分（质量分数）C≤0.11%、Si≤0.13%、Mn≤0.18%、Cu≤0.14%、P≤0.013%、S≤0.014%、Ni≤0.11%、Cr≤0.11%、N≤0.007%，力学性能下屈服强度ReL≥295MPa，拉伸强度Rm≥500MPa，断后拉伸率/≥31%。` },
+                    { name: '粉末涂料（静电喷涂粉末）', desc: `粉末涂料（静电喷涂粉末），热固性粉末涂料要求涂膜外观正常，干附着力≤0级，沸水附着力≤0级，湿附着力≤0级，铅笔硬度（内聚破坏中擦伤）≥3H，耐冲击性（正向冲击）未观察到裂纹、皱纹及剥落现象，杯突试验≥6mm，弯曲试验≤2mm涂层无开裂或从底材上剥落，耐酸性240h无异常，耐碱性168h无异常，耐沸水性无异常，耐湿性室内用500h无异常，有害物质限量总铅（Pb）含量（限色漆、腻子和醇酸清漆）未检出。` }
+                ]
+            },
+            {
+                title: '售后服务',
+                id: 'afterSales',
+                options: [
+                    {
+                        name: '7×24本地化', desc: `1、售后服务方案满分5分，评标委员会就售后服务架构横向综合评审，要素包括：
+（1）售后服务点设置（地域覆盖、仓库/备件中心）；
+（2）人员配备（数量、资质、驻场/巡检机制）；
+（3）响应时间（到场时限、远程支持、节假日安排）；
+（4）保障措施（备品备件库存、应急预案、替代方案）；
+（5）培训计划（培训对象、课时、考核方式）；
+（6）验收方案（验收节点、标准、文档交付）；
+（7）质保期后维保费用（单价清单、折扣率、封顶价）；
+（8）服务承诺条款（质保年限、违约赔偿、终身技术支持）。
+2、评分档次：
+（1）优（5分）：方案说明详细、准确、完全满足或优于招标要求，时间节点量化可考，费用透明，承诺可落地；
+（2）良（3分）：方案说明较详细、较准确，基本满足要求，但部分要素缺量化或深度略逊；
+（3）一般（1分）：方案说明粗略、准确度不高，存在关键要素缺漏或与项目匹配度低；
+（4）差（0分）：内容与本项目无关或未提供售后服务方案。`
+                    },
+
+                    { name: '7×24远程', desc: '7×24远程：远程7×24。' },
+                    { name: '工作日本地化', desc: '工作日本地化：本地工作日。' }
+                ]
+            },
+            {
+                title: '资质证明',
+                id: 'qualification',
+                options: [
+                    { name: 'ISO三体系', desc: '投标人或制造商提供有效期内的ISO9001、ISO14001、 ISO45001证书，认证内容须涵盖办公家具的设计、生产和服务。' },
+                    { name: '十环认证', desc: '投标人或制造商获得有效期内的中国环境标志产品认证，认证单元含：实木类家具、钢木家具、人造板类家具、综合类木家具、软体家具、金属家具、玻璃家具、其他家具。' },
+                    { name: 'CQC认证', desc: '投标人或制造商提供有效期内的中国环保产品认证证书，产品系列含：木制办公家具、金属办公家具、其他软体家具。' },
+                    { name: '绿色供应链', desc: '投标人或制造商获得有效期内的绿色供应链评价证书。' },
+                    { name: '绿色产品认证', desc: '投标人或制造商获得有效期内的中国绿色产品认证证书，认证单元含：木家具、软体家具、金属家具。' },
+                    { name: '环保卫士认证', desc: '投标人或制造商获得有效期内的家具产品环保卫士认证证书，认证单元含：木家具、软体家具、金属家具、其他家具。' },
+                    { name: '低VOCs家具产品认证', desc: '投标人或制造商获得有效期内的低VOCs家具产品认证证书，认证单元含：木家具、软体家具、金属家具。' },
+                    { name: '有害物质限量认证', desc: '投标人或制造商获得有效期内的家具产品有害物质限量认证证书，认证单元含：木家具、软体家具、金属家具。' },
+                    { name: '人类工效学产品认证', desc: '投标人或制造商持有有效期内的人类工效学产品认证证书，认证范围含：桌台类、柜架类、椅类、床见类、沙发类、屏风类。' },
+                    { name: '安全生产标准化', desc: '投标人或制造商获得安全生产标准化证书。' },
+                    { name: '企业信用评价', desc: '投标人或制造商获得有效期内的企业信用评价认证-AAA级。' },
+                    { name: '仅ISO', desc: '仅ISO：仅ISO。' }
+                ]
+            },
+            {
+                title: '项目经验',
+                id: 'projectExp',
+                options: [
+                    {
+                        name: '3个以上类似项目', desc: `1、计分标准：
+每提供1个符合要求的类似业绩得1分，最多得3分。
+2、业绩要求：
+（1）合同内容须同时包含“办公家具供货”及“安装服务”，且规模不低于本项目对应标段；
+（2）合同签订日期在本项目招标公告发布之日前3年内（含发布当日）；
+（3）同一编号（或同一甲方）合同仅计1次，不重复得分。
+3、证明材料：
+（1）响应文件须附合同关键页扫描件（至少含首页、标的页、金额页、签字盖章页），如为框架协议须另附对应订单或验收单；
+（2）扫描件应清晰可辨，缺少任一关键信息或无法辨认的，该业绩不计分；
+（3）外文合同须附中文翻译件，翻译件须加盖投标人公章。
+4、无效业绩：
+（1）合同内容非办公家具、未含安装服务或规模明显低于本项目；
+（2）合同签订日期超出上述3年期限；
+（3）未在投标文件中附扫描件或仅提供中标通知书、甲方证明等非合同类材料。
+5、评分程序：
+评委先对业绩数量进行统计，再对合同内容、签订时间、规模符合性进行核验，最终按有效业绩数量打分。`
+                    },
+
+                    { name: '2个类似项目', desc: '2个类似项目：2个。' },
+                    { name: '1个类似项目', desc: '1个类似项目：1个。' }
+                ]
+            }
+        ];
+
+        /* ===== 每个栏目底部要固化的文字 ===== */
+        const staticTextMap = {
+            priceBid: '注：评标委员会依据本规则进行判定，评标委员会对异常报价有最终裁定权。',
+            techLevel: '注：得分取全体评委打分的算术平均值，精确到小数点后1位。',
+            techPlan: '注：技术方案满分20分，评委就以上内容横向对比、择优打分，各项得分相加即为技术方案最终得分，精确到小数点后1位。',
+            constructionPlan: '注：本项满分5分（基础3分+附加2分），评委根据横向对比结果择优给分。',
+            capability: '注：发票或租赁合同须显示设备名称、买方/承租方、开票/签约日期，且买方/承租方须为本次投标产品的制造商；投标文件内须附扫描件，未提供或无法辨识的视为缺项。',
+            quality: '注：同类别产品多份报告仅计 0.5 分，外文报告须附中文章。',
+            materialQuality: '注：每提供1项计1分（提供制造商检测报告，以省级及以上 CMA 报告为准，对应的参数缺项或不满足均不记分，未提供视为不满足）。',
+            afterSales: '注：本地化服务网点须给出详细地址、联系人及 24 h 电话。',
+            qualification: '注：每提供1项计1分（提供加盖公章扫描件，缺项或不满足均不记分，未提供视为不满足）。',
+            projectExp: '注：评标委员会对投标人或制造商近3年（以合同签订日期为准）完成的“办公家具同等规模供货及安装”类似业绩进行评审，同一甲方仅计 1 次。'
+        };
+
+        const tableRows = [
+            [1, '价格（30%）', '投标报价', 30, 'priceBid', 'noSerial'],
+            [2, '技术（59%）', '满足技术程度', 5, 'techLevel', 'noSerial'],
+            ['', '', '技术方案', 20, 'techPlan', 'noSerial'],
+            ['', '', '施工计划', 5, 'constructionPlan', 'noSerial'],
+            ['', '', '制造商生产能力', 5, 'capability', 'noSerial'],
+            ['', '', '产品品质', 4, 'quality', 'noSerial'],
+            ['', '', '材料性能', 10, 'materialQuality'],
+            ['', '', '售后服务', 10, 'afterSales', 'noSerial'],
+            [3, '商务（11%）', '资质证明', 8, 'qualification'],
+            ['', '', '项目经验', 3, 'projectExp', 'noSerial']
+        ];
+
+        /* ====== 左侧：仅展示 ====== */
+        const leftPanel = document.getElementById('leftPanel');
+        groups.forEach(g => {
+            const div = document.createElement('div'); div.className = 'option-group';
+            div.innerHTML = `<h3>${g.title}</h3>`;
+            g.options.forEach((opt, idx) => {
+                const item = document.createElement('div'); item.className = 'option-item';
+                item.innerHTML = `
+                <div class="option-name">${opt.desc}</div>  <!-- 展示框内容 -->
+                <button class="option-btn" data-id="${g.id}" data-opt="${opt.desc}">${opt.name}</button>`; //<!-- 按钮名称 -->
+                div.appendChild(item);
+            });
+            leftPanel.appendChild(div);
+        });
+
+        /* === 右侧表格：恒定为 5 列，永不乱 === */
+        const tbody = document.createElement('tbody');
+        tableRows.forEach((r, i) => {
+            const tr = document.createElement('tr');
+
+            /* 0. 序号列：只在首行写内容，后面行写空字符串但不删 <td> */
+            const td0 = document.createElement('td');
+            td0.textContent = r[0] || '';
+            tr.appendChild(td0);
+
+            /* 1. 评审因素列：同上 */
+            const td1 = document.createElement('td');
+            td1.textContent = r[1] || '';
+            tr.appendChild(td1);
+
+            /* 2. 评审项目（永远有） */
+            const td2 = document.createElement('td');
+            td2.textContent = r[2];
+            tr.appendChild(td2);
+
+            /* 3. 分值（永远有） */
+            const td3 = document.createElement('td');
+            td3.textContent = r[3];
+            tr.appendChild(td3);
+
+            /* 4. 评分标准（永远有） */
+            /* 4. 评分标准列：textarea + 固化文本 */
+            const td4 = document.createElement('td');
+            const noSerial = r[5] || '';
+            const fieldId = r[4];                 // 就是 priceBid / techLevel …
+            const staticText = staticTextMap[fieldId] || ''; // 没配就留空
+            td4.innerHTML = `
+            <textarea id="${fieldId}" data-no-serial="${noSerial}" placeholder="请输入评分标准..."></textarea>
+            ${staticText ? `
+            <div class="static-txt" style="font-weight:bold;margin-top:6px;font-size:13px;">
+            ${staticText}
+            </div>` : ''}`;
+            tr.appendChild(td4);
+
+            tbody.appendChild(tr);
+        });
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+        <tr>
+            <th style="width:8%">序号</th><th style="width:15%">评审因素</th>
+            <th style="width:15%">评审项目</th><th style="width:8%">分值</th>
+            <th style="width:auto;">评分标准</th>
+        </tr>`;
+        document.getElementById('scoreTable').appendChild(thead);
+        document.getElementById('scoreTable').appendChild(tbody);
+
+        /* ====== 左侧按钮点击统一入口 ====== */
+        /* === 单选组 id 列表 === */
+        const singleGroups = ['priceBid', 'techLevel', 'techPlan', 'constructionPlan',
+            'capability', 'quality', 'afterSales', 'projectExp'];
+
+        leftPanel.addEventListener('click', e => {
+            if (!e.target.classList.contains('option-btn')) return;
+
+            const btn = e.target;
+            const id = btn.dataset.id;
+            const opt = btn.dataset.opt;
+            const ta = document.getElementById(id);
+
+            /* 单选组：先清掉同组其它按钮高亮 */
+            if (singleGroups.includes(id)) {
+                btn.closest('.option-group')
+                    .querySelectorAll('.option-btn')
+                    .forEach(b => b.classList.remove('selected'));
+            }
+
+            /* 自己切换高亮 + 内容增删 */
+            if (btn.classList.contains('selected')) {
+                btn.classList.remove('selected');
+                /* 单选组：直接清空整个框 */
+                if (singleGroups.includes(id)) {
+                    ta.value = '';
+                    return;                 // 清空就结束，不再走后面编号逻辑
+                }
+                /* 多选组（材料性能、资质证明）只删这一项，并重新编号 */
+                const lines = ta.value.split('\n').filter(l => l.trim());
+                const keyLine = opt.split('\n')[0];
+                const newLines = lines.filter(l => !l.includes(keyLine));
+                ta.value = newLines.map((l, i) => `${i + 1}、${l.replace(/^\d+、/, '')}`).join('\n');
+                return;
+            } else {
+                btn.classList.add('selected');
+                /* 单选组：直接写入选中内容，不带序号 */
+                if (singleGroups.includes(id)) {
+                    ta.value = opt;
+                    return;
+                }
+                /* 多选组：追加 + 重新编号 */
+                const lines = ta.value.split('\n').filter(l => l.trim());
+                lines.push(opt);
+                ta.value = lines.map((l, i) => `${i + 1}、${l.replace(/^\d+、/, '')}`).join('\n');
+            }
+        });
+
+        /* ====== 单元格编辑 ====== */
+        let cur = null;
+        document.querySelectorAll('#scoreTable .editable').forEach(cell => {
+            cell.addEventListener('click', function () {
+                if (cur && cur !== this) saveCell(cur);
+                startCell(this);
+            });
+        });
+        document.addEventListener('click', e => {
+            if (cur && !cur.contains(e.target)) saveCell(cur);
+        });
+        function startCell(cell) {
+            if (cell.classList.contains('editing')) return;
+            cell.dataset.orig = cell.textContent;
+            cell.contentEditable = true; cell.classList.add('editing'); cell.focus(); cur = cell;
+        }
+        function saveCell(cell) {
+            cell.contentEditable = false; cell.classList.remove('editing'); cur = null;
+        }
+
+
+        /* ========== 导出 Word（已修好：固化文字会一起导出） ========== */
+        function exportToWord() {
+            const tempTable = document.getElementById('scoreTable').cloneNode(true);
+
+            tempTable.querySelectorAll('tr').forEach((tr, rowIdx) => {
+                const td = tr.cells[4];
+                if (!td) return;
+
+                /* ****** 先保存固化文本 ****** */
+                const staticDiv = td.querySelector('.static-txt');
+                const staticPart = staticDiv ? ('<br><div style="font-weight:bold">' + staticDiv.innerHTML + '</div>') : '';
+
+                const ta = td.querySelector('textarea');
+                if (!ta) return;          // 没有编辑框就跳过
+                let txt = ta.value;
+                const noSerial = ta.dataset.noSerial === 'noSerial';
+
+                /* 人工内容：带序号 or 不带序号 */
+                if (!noSerial) {
+                    txt = txt
+                        .split('\n')
+                        .filter(l => l.trim())
+                        .map((l, i) => `${i + 1}、${l.replace(/^\d+、/, '').trim()}`)
+                        .join('<br>');
+                } else {
+                    txt = txt.split('\n').join('<br>');
+                }
+
+                /* ****** 关键：把人工内容 + 固化文本一起写进去 ****** */
+                td.innerHTML = txt + staticPart;
+            });
+
+            const html = `<!DOCTYPE html>
+                <html>
+                <head>
+                <meta charset="UTF-8">
+                <title>投标评分表</title>
+                <style>
+                @page{margin:1.2cm 1cm;}
+                body{font-family:'Microsoft YaHei',SimSun;font-size:14px;color:#000;background:#fff;text-align:center;}
+                h1{font-size:22px;margin-bottom:20px;}
+                table{width:100%;margin:0 auto;border-collapse:collapse;font-size:14px;line-height:1.6;}
+                th,td{border:1px solid #000;padding:10px 8px;}
+                th{background:#404040;color:#fff;font-weight:bold;text-align:center;}
+                td{vertical-align:top;text-align:left;}
+                td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4){text-align:center;vertical-align:middle;}
+                td:nth-child(5){width:auto;}
+                </style>
+                </head>
+                <body>
+                <h1>投标评分表</h1>
+                ${tempTable.outerHTML}
+                </body>
+                </html>`;
+
+            // ① 用 html-docx-js 生成真 docx 二进制
+            const converted = htmlDocx.asBlob(html);
+            // ② 下载
+            downLoad(converted, '投标评分表.docx',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        }
+        /* ========== 下载辅助 ========== */
+        function downLoad(data, fileName, mimeType) {
+            const blob = new Blob([data], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = decodeURIComponent(fileName);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+
+</html>

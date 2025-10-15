@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料参数合并</title>
+
+    <!-- 字体 & 图标 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+
+    <!-- 样式 -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="wrap">
+        <!-- 左侧 -->
+        <section class="panel left">
+            <header class="panel-header">
+                <span class="material-symbols-outlined icon">inventory_2</span>
+                <h1>材料参数</h1>
+            </header>
+            <div class="table-wrap">
+                <table id="contentTable">
+                    <thead>
+                        <tr>
+                            <th style="width:54px">#</th>
+                            <th>内容</th>
+                            <th style="width:120px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 右侧 -->
+        <section class="panel right">
+            <header class="panel-header">
+                <span class="material-symbols-outlined icon">merge</span>
+                <h1>合并结果</h1>
+            </header>
+            <div id="mergedContent" class="merge-area"></div>
+            <div class="btn-bar">
+                <button id="clearBtn" class="btn secondary">
+                    <span class="material-symbols-outlined">delete</span>清除
+                </button>
+                <button id="copyBtn" class="btn primary">
+                    <span class="material-symbols-outlined">content_copy</span>复制
+                </button>
+                <span id="copyFeedback" class="feedback"></span>
+            </div>
+        </section>
+    </div>
+
+    <!-- 逻辑 -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
