@@ -503,7 +503,7 @@
                 placeholder.style.display = 'none';
 
                 const safeName = (imageUrl || viewer.currentModel).replace(/\//g, '-');
-                img.src = 'images/' + safeName + '.jpg';
+                img.src = './images/' + safeName + '.jpg';
 
                 // 图来了再停加载动画
                 img.onload = () => {
@@ -662,3 +662,4 @@
 
 
 </html>
+
