@@ -436,21 +436,6 @@
                 };
             }
 
-            async simulateFileCheck() {
-                // 模拟异步文件检查
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        // 模拟加载 Excel 数据
-                        this.excelData = [
-                            { model: 'ABC-123', spec: '100x50x30mm', color: '红色', colorCode: '#FF0000', price: 299.99, image: 'https://via.placeholder.com/500x400/FF0000/FFFFFF?text=ABC-123' },
-                            { model: 'DEF-456', spec: '150x75x40mm', color: '蓝色', colorCode: '#0066FF', price: 459.99, image: 'https://via.placeholder.com/500x400/0066FF/FFFFFF?text=DEF-456' },
-                            { model: 'GHI-789', spec: '200x100x50mm', color: '绿色', colorCode: '#00AA00', price: 699.99, image: 'https://via.placeholder.com/500x400/00AA00/FFFFFF?text=GHI-789' }
-                        ];
-                        resolve();
-                    }, 500);
-                });
-            }
-
             async loadProductInfo() {
                 const model = this.currentModel.trim();
                 if (!model) {
@@ -631,6 +616,44 @@
         document.head.appendChild(style);
 
 
+        document.addEventListener('DOMContentLoaded', () => {
+            window.viewer = new ProductInfoViewer();
+        });
+
+        /* ===== 公共：读 Excel + 更新界面 ===== */
+        async function loadExcelFromBuffer(buffer, fileName = 'product_data.xlsx') {
+            const workbook = XLSX.read(buffer, { type: 'array' });
+
+            let allRows = [];
+            workbook.SheetNames.forEach(name => {
+                const sheet = workbook.Sheets[name];
+                const json = XLSX.utils.sheet_to_json(sheet);
+                allRows = allRows.concat(json);
+            });
+
+            viewer.excelData = allRows.map(r => ({
+                model: String(r['型号'] || '').trim(),
+                spec: String(r['规格'] || '').trim(),
+                color: String(r['颜色'] || '').trim(),
+                colorCode: String(r['颜色代码'] || '#cccccc').trim(),
+                price: parseFloat(r['单价'] || 0),
+                image: String(r['图片'] || '').trim()
+            }));
+
+            document.getElementById('fileStatus').textContent = fileName + '（已合并所有工作表）';
+            document.getElementById('dataStatus').className = 'status-indicator status-success';
+            document.getElementById('dataStatus').innerHTML = '<span>✓</span><span>全部工作表已加载</span>';
+        }
+
+        /* ===== 零点击：自动加载同目录 Excel ===== */
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('product_data.xlsx')                       // ← 同目录文件
+                .then(r => r.arrayBuffer())
+                .then(buf => loadExcelFromBuffer(buf, 'product_data.xlsx（自动加载）'))
+                .catch(() => viewer.showMessage('自动加载失败，请手动选择', 'error'));
+        });
+
+        /* ===== 启动 ===== */
         document.addEventListener('DOMContentLoaded', () => {
             window.viewer = new ProductInfoViewer();
         });
