@@ -647,7 +647,7 @@
 
         /* ===== 零点击：自动加载同目录 Excel ===== */
         window.addEventListener('DOMContentLoaded', () => {
-            fetch('product_data.xlsx')                       // ← 同目录文件
+            fetch('./product_data.xlsx')                       // ← 同目录文件
                 .then(r => r.arrayBuffer())
                 .then(buf => loadExcelFromBuffer(buf, 'product_data.xlsx（自动加载）'))
                 .catch(() => viewer.showMessage('自动加载失败，请手动选择', 'error'));
@@ -659,5 +659,6 @@
         });
     </script>
 </body>
+
 
 </html>
