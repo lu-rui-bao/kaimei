@@ -504,7 +504,7 @@
 
                 const safeName = (imageUrl || viewer.currentModel)
                  .replace(/\//g, '-')
-                 .toLowerCase();
+                 .toUpperCase();
                 img.src = './images/' + safeName + '.jpg';
 
                 // 图来了再停加载动画
@@ -664,5 +664,6 @@
 
 
 </html>
+
 
 
