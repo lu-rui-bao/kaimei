@@ -502,7 +502,9 @@
                 img.style.display = 'block';
                 placeholder.style.display = 'none';
 
-                const safeName = (imageUrl || viewer.currentModel).replace(/\//g, '-');
+                const safeName = (imageUrl || viewer.currentModel)
+                 .replace(/\//g, '-')
+                 .toLowerCase();
                 img.src = './images/' + safeName + '.jpg';
 
                 // 图来了再停加载动画
@@ -662,4 +664,5 @@
 
 
 </html>
+
 
