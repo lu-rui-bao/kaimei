@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>凯美 AI 文案生成器</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- 浏览器直接调 HTTP 接口（CORS 已放行） -->
+    <script src="https://npm.elemecdn.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://npm.elemecdn.com/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        :root {
+            --k-blue: #003366;
+            --k-btn: linear-gradient(135deg, #0052cc, #003366);
+            --radius: 12px;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--k-btn);
+            color: #fff;
+            padding: 30px;
+            text-align: center;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 14px;
+            margin: 8px 0 0;
+            opacity: 0.8;
+        }
+
+        .wrap {
+            padding: 30px 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+        }
+
+        .row {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .left {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .right {
+            flex: 2;
+            min-width: 420px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--k-blue);
+            font-size: 14px;
+            margin-top: 10px;
+            display: block;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--k-btn);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .preview-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 320px;
+        }
+
+        #canvas-wrap {
+            transform: scale(0.35);
+            transform-origin: top center;
+        }
+
+        .tpl-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tpl-select div {
+            padding: 8px 14px;
+            background: #e6f0ff;
+            color: var(--k-blue);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .tpl-select div.active {
+            background: var(--k-btn);
+            color: #fff;
+        }
+
+        #log {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>凯美 AI 文案生成器</h1>
+        <p>KAIMEI | 让工作更简单</p>
+    </header>
+
+    <div class="wrap">
+        <div class="row">
+            <div class="left card">
+                <label>产品关键词</label>
+                <input id="kw" placeholder="如：升降桌" />
+
+                <label>核心卖点</label>
+                <textarea id="sell" rows="3" placeholder="如：55-115cm一键升降，久坐不累"></textarea>
+
+                <label>批量数量</label>
+                <select id="num">
+                    <option value="1">1张</option>
+                    <option value="5">5张</option>
+                    <option value="10">10张</option>
+                    <option value="20">20张</option>
+                </select>
+
+                <button id="go">生成并打包下载</button>
+                <div id="log"></div>
+            </div>
+
+            <div class="right card">
+                <div class="tpl-select">
+                    <div class="active" data-size="douban">抖音竖图</div>
+                    <div data-size="wechat">朋友圈方图</div>
+                    <div data-size="red">小红书3:4</div>
+                    <div data-size="live">直播横图</div>
+                </div>
+                <div class="preview-box">
+                    <div id="canvas-wrap" class="canvas-wrap"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        /* ---------- 工具函数 ---------- */
+        const sizeMap = {
+            douban: { w: 1242, h: 1664, name: '抖音竖图' },
+            wechat: { w: 1080, h: 1080, name: '朋友圈方图' },
+            red: { w: 900, h: 1200, name: '小红书3:4' },
+            live: { w: 1920, h: 1080, name: '直播横图' }
+        };
+        let activeSize = 'douban';
+
+        function $(id) { return document.getElementById(id); }
+
+        /* ---------- 真 AI 文案（HTTP 接口，无 CORS） ---------- */
+        async function getAI文案(keyword, sell) {
+            const APPID = '437344a0';
+            const APIKEY = 'c31236d8a66ab036acb0b2242f21f522';
+            const APISec = 'NDc4OWM5ZDIwZTc5ZWIzZDQwMTc3Nzlm';
+            const host = 'maas-api.cn-huabei-1.xf-yun.com';
+            const path = '/v1/chat/completions';
+
+            const date = new Date().toUTCString();
+            const signatureOrigin = 'host: ' + host + '\ndate: ' + date + '\nPOST ' + path + ' HTTP/1.1';
+
+            const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(APISec), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+            const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signatureOrigin));
+            const signature = btoa(String.fromCharCode(...new Uint8Array(sig)));
+            const authorization = 'api_key="' + APIKEY + '", algorithm="hmac-sha256", headers="host date request-line", signature="' + signature + '"';
+
+            const res = await fetch('https://' + host + path, {
+                method: 'POST',
+                headers: { Authorization: authorization, Date: date, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'generalv3',
+                    temperature: 0.8,
+                    max_tokens: 120,
+                    messages: [
+                        { role: 'user', content: `写 70 字以内抖音/朋友圈文案，产品：${keyword}，卖点：${sell}，带 3 个话题标签，口语化一点。` }
+                    ]
+                })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const json = await res.json();
+            return json.choices[0].message.content;
+        }
+
+        /* ---------- 模板切换 ---------- */
+        document.querySelectorAll('.tpl-select div').forEach(d => {
+            d.onclick = function () {
+                document.querySelectorAll('.tpl-select div').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                activeSize = this.dataset.size;
+                const kw = $('kw').value || '升降桌', sell = $('sell').value || '一键升降，告别腰酸';
+                renderCanvas(kw, sell, activeSize);
+            };
+        });
+
+        /* ---------- 模板渲染 ---------- */
+        function renderCanvas(kw, sell, sizeKey) {
+            const { w, h } = sizeMap[sizeKey];
+            const isLive = sizeKey === 'live';
+            const div = document.createElement('div');
+            div.style.cssText = `width:${w}px;height:${h}px;background:${isLive ? 'linear-gradient(90deg,#1e3c72,#2a5298)' : 'linear-gradient(135deg,#003366,#0052cc)'};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:80px`;
+            const title = kw, txt = sell, hash = `#办公家具 #${kw} #打工人续命神器`;
+            const fsTitle = Math.min(88, h / 12), fsTxt = Math.min(48, h / 20), fsHash = Math.min(36, h / 30);
+            div.innerHTML = `
+      <div style="font-size:${fsTitle}px;font-weight:700;margin-bottom:40px">${title}</div>
+      <div style="font-size:${fsTxt}px;line-height:1.5;max-width:80%">${txt}</div>
+      <div style="font-size:${fsHash}px;margin-top:60px;opacity:.9">${hash}</div>
+    `;
+            $('canvas-wrap').innerHTML = '';
+            $('canvas-wrap').appendChild(div);
+            return div;
+        }
+
+        /* ---------- 批量生成 & 下载 ---------- */
+        $('go').onclick = async function () {
+            const kw = $('kw').value.trim(), sell = $('sell').value.trim(), n = parseInt($('num').value);
+            if (!kw || !sell) { alert('请填完整'); return; }
+            $('log').innerText = 'AI 文案生成中…';
+            const aiTxt = await getAI文案(kw, sell);
+            $('log').innerText = '文案已生成，正在出图…';
+            const zip = new JSZip();
+            for (let i = 0; i < n; i++) {
+                const div = renderCanvas(kw, aiTxt + (n > 1 ? ` (${i + 1})` : ''), activeSize);
+                const canvas = await html2canvas(div, { useCORS: true, scale: 2 });
+                const blob = await new Promise(res => canvas.toBlob(res));
+                zip.file(`${kw}_${sizeMap[activeSize].name}_${i + 1}.png`, blob);
+            }
+            const content = await zip.generateAsync({ type: 'blob' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(content);
+            a.download = `${kw}_凯美AI批量_${n}张.zip`;
+            a.click();
+            $('log').innerText = `✅ AI 已生成 ${n} 张`;
+        };
+
+        /* ---------- 初始预览 ---------- */
+        renderCanvas('升降桌', '55-115cm 一键升降，告别腰酸', activeSize);
+    </script>
+</body>
+</html>
