@@ -200,7 +200,7 @@
 
         /* ---------- 真 AI 文案（HTTP 接口，无 CORS） ---------- */
         async function getAI文案(keyword, sell) {
-            const proxy = 'https://ai-feexhrizyx.cn-hangzhou.fcapp.run/api'; // ← 这里填你 Vercel 域名
+            const proxy = 'https://ai-feexhrizyx.cn-hangzhou.fcapp.run'; // ← 这里填你 Vercel 域名
             const res = await fetch(`${proxy}?keyword=${encodeURIComponent(keyword)}&sell=${encodeURIComponent(sell)}`);
             if (!res.ok) throw new Error(await res.text());
             const { text } = await res.json();
@@ -265,4 +265,5 @@
 
 
 </html>
+
 
