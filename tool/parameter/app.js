@@ -7,101 +7,65 @@ class MaterialManager {
     }
 
     initializeElements() {
-        this.tableBody = document.getElementById('tableBody');
-        this.mergedContentDiv = document.getElementById('mergedContent');
-        this.copyFeedback = document.getElementById('copyFeedback');
+        this.buttonWall  = document.getElementById('buttonWall');
+        this.finishWall  = document.getElementById('finishWall');
+        this.mergedDiv   = document.getElementById('mergedContent');
+        this.copyFb      = document.getElementById('copyFeedback');
     }
 
     bindEvents() {
-        // 绑定按钮事件
-        document.getElementById('clearBtn').addEventListener('click', () => this.clearMergedContent());
-        document.getElementById('copyBtn').addEventListener('click', () => this.copyMergedContent());
+        document.getElementById('clearBtn').addEventListener('click', () => this.clearMerged());
+        document.getElementById('copyBtn').addEventListener('click', () => this.copyMerged());
     }
 
     renderTable() {
-        this.config.contents.forEach((content, index) => {
-            const row = this.createTableRow(content, index);
-            this.tableBody.appendChild(row);
-        });
+        this.config.contents.forEach((t, i) => this.makeButton(t, this.config.buttonNames[i], this.buttonWall));
+        FINISH_CONFIG.contents.forEach((t, i) => this.makeButton(t, FINISH_CONFIG.buttonNames[i], this.finishWall));
     }
 
-    createTableRow(content, index) {
-        const row = document.createElement('tr');
-
-        const cell1 = document.createElement('td');
-        cell1.textContent = index + 1;
-
-        const cell2 = document.createElement('td');
-        cell2.textContent = content;
-        cell2.id = `content${index + 1}`;
-
-        const cell3 = document.createElement('td');
-        const button = document.createElement('button');
-        button.textContent = this.config.buttonNames[index];
-        button.className = 'add';                             // ★ 1. 加 class
-        button.addEventListener('click', () => this.toggleMergeContent(index + 1));
-        cell3.appendChild(button);
-
-        row.appendChild(cell1);
-        row.appendChild(cell2);
-        row.appendChild(cell3);
-
-        return row;
+    makeButton(text, name, container) {
+        const btn = document.createElement('button');
+        btn.className = 'material-btn';
+        btn.innerHTML = `<span class="check"></span>${name}`;
+        btn.addEventListener('click', () => this.toggleMerge(text, btn));
+        container.appendChild(btn);
     }
 
-    toggleMergeContent(rowNumber) {
-        const contentId = `content${rowNumber}`;
-        const content = document.getElementById(contentId).innerText;
-        const contentIndex = this.mergedContents.indexOf(content);
-
-        /* ★ 新增 ★ */
-        const btn = document.querySelector(`#tableBody tr:nth-child(${rowNumber}) button.add`);
-        btn.classList.toggle('selected', contentIndex === -1);
-
-        if (contentIndex === -1) {
-            this.mergedContents.push(content);
+    toggleMerge(text, btn) {
+        const idx = this.mergedContents.indexOf(text);
+        if (idx === -1) {
+            this.mergedContents.push(text);
+            btn.classList.add('selected');
         } else {
-            this.mergedContents.splice(contentIndex, 1);
+            this.mergedContents.splice(idx, 1);
+            btn.classList.remove('selected');
         }
-        this.updateMergedDisplay();
+        this.updateDisplay();
     }
 
-    updateMergedDisplay() {
-        this.mergedContentDiv.innerText = '';
-        this.mergedContents.forEach((content, index) => {
-            this.mergedContentDiv.innerText += `${index + 1}、${content}\n`;
-        });
+    updateDisplay() {
+        this.mergedDiv.innerText = this.mergedContents.map((c, i) => `${i + 1}、${c}`).join('\n');
     }
 
-    clearMergedContent() {
-        this.mergedContentDiv.innerText = '';
+    clearMerged() {
         this.mergedContents = [];
+        this.updateDisplay();
+        document.querySelectorAll('.material-btn.selected').forEach(b => b.classList.remove('selected'));
     }
 
-    copyMergedContent() {
-        const textArea = document.createElement('textarea');
-        textArea.value = this.mergedContentDiv.innerText;
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
+    async copyMerged() {
+        const text = this.mergedDiv.innerText;
+        if (!text) return;
         try {
-            const successful = document.execCommand('copy');
-            this.copyFeedback.textContent = successful ? '√' : '×';
-
-            setTimeout(() => {
-                this.copyFeedback.textContent = '';
-            }, 2000);
-        } catch (err) {
-            console.error('无法复制', err);
-            this.copyFeedback.textContent = '×';
+            await navigator.clipboard.writeText(text);
+            this.copyFb.textContent = '√ 已复制';
+        } catch (e) {
+            this.copyFb.textContent = '× 复制失败';
         }
-
-        document.body.removeChild(textArea);
+        setTimeout(() => this.copyFb.textContent = '', 2000);
     }
 }
 
-// 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
     const app = new MaterialManager(MATERIAL_CONFIG);
     app.renderTable();

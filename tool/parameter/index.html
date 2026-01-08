@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=800, user-scalable=yes">
-    <title>材料参数合并</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技术参数辅助工具</title>
 
     <!-- 字体 & 图标 -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 
     <!-- 样式 -->
@@ -16,21 +16,19 @@
     <div class="wrap">
         <!-- 左侧 -->
         <section class="panel left">
-            <header class="panel-header">
-                <span class="material-symbols-outlined icon">inventory_2</span>
-                <h1>材料参数</h1>
-            </header>
-            <div class="table-wrap">
-                <table id="contentTable">
-                    <thead>
-                        <tr>
-                            <th style="width:54px">#</th>
-                            <th>内容</th>
-                            <th style="width:120px">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
+            <div class="sub-panel">
+                <header class="panel-header">
+                    <span class="material-symbols-outlined icon">inventory_2</span>
+                    <h1>材料参数</h1>
+                </header>
+                <div id="buttonWall" class="button-wall"></div>
+            </div>
+            <div class="sub-panel">
+                <header class="panel-header">
+                    <span class="material-symbols-outlined icon">fact_check</span>
+                    <h1>成品参数</h1>
+                </header>
+                <div id="finishWall" class="button-wall"></div>
             </div>
         </section>
 
@@ -53,7 +51,7 @@
         </section>
     </div>
 
-    <!-- 逻辑 -->
+    <!-- 脚本 -->
     <script src="config.js"></script>
     <script src="app.js"></script>
 </body>

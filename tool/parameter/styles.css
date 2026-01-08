@@ -1,19 +1,12 @@
-html,
-body {
-    overflow-x: hidden;
-}
-
 /* ---------- 变量 ---------- */
 :root {
-    --base-bg: #f4f6fb;
-    --card-bg: #ffffff;
     --primary: #4f7cff;
     --primary-dark: #3b68ef;
     --text-main: #202124;
     --text-second: #5f6368;
     --border: #e8eaf0;
     --radius: 12px;
-    --shadow: 0 4px 20px rgba(0, 0, 0, .06);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     --font: 'Inter', sans-serif;
 }
 
@@ -23,17 +16,16 @@ body {
     margin: 0;
     padding: 0;
 }
-
 body {
     font-family: var(--font);
-
     color: var(--text-main);
-    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    background: linear-gradient(135deg, #0d1e24 0%, #1d2e36 50%, #2a3e46 100%);
     height: 100vh;
     display: flex;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
-
 .wrap {
     width: 100%;
     display: flex;
@@ -41,188 +33,199 @@ body {
     padding: 16px;
 }
 
-/* ---------- 面板 ---------- */
+/* ---------- 玻璃卡片 ---------- */
 .panel {
-    background: var(--card-bg);
-    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: var(--shadow);
+    border-radius: var(--radius);
     display: flex;
     flex-direction: column;
     height: 80%;
     max-width: 800px;
-    /* 可选，根据你设计调整 */
-    margin: auto auto;
-    /* 水平居中 */
+    margin: auto;
 }
-
 .left {
-    flex: 1.2
+    flex: 1.2;
 }
-
 .right {
-    flex: 1
+    flex: 1;
 }
 
+/* ---------- 标题彩条 ---------- */
 .panel-header {
     display: flex;
     align-items: center;
     padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
 }
-
 .panel-header h1 {
     font-size: 18px;
     font-weight: 600;
     margin-left: 8px;
 }
-
 .icon {
     font-size: 22px;
-    color: var(--primary);
+    color: #fff;
 }
 
-/* ---------- 表格 ---------- */
-.table-wrap {
+/* 材料蓝 */
+.panel.left .sub-panel:nth-of-type(1) .panel-header {
+    background: linear-gradient(135deg, #a1b8ff 0%, #5d4cfc 100%);
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.06);
+}
+/* 成品绿 */
+.panel.left .sub-panel:nth-of-type(2) .panel-header {
+    background: linear-gradient(135deg, #a2ffc9 0%, #1abc9c 100%);
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.06);
+}
+/* 合并灰 */
+.panel.right .panel-header {
+    background: linear-gradient(135deg, #a2a9b3 0%, #42464c 100%);
+    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- 左侧两栏 ---------- */
+.panel.left {
+    display: flex;
+    flex-direction: column;
+}
+.sub-panel {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.sub-panel .button-wall {
     flex: 1;
     overflow: auto;
     padding: 12px 24px 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    align-content: start;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-thead {
-    position: sticky;
-    top: 0;
-    background: var(--card-bg);
-    z-index: 1;
-}
-
-th {
+/* ---------- 悬浮瓷片按钮 ---------- */
+.material-btn {
     text-align: left;
-    padding: 10px 0;
-    font-weight: 500;
-    color: var(--text-second);
-    border-bottom: 2px solid var(--border);
-}
-
-td {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    line-height: 1.55;
-}
-
-tbody tr:hover {
-    background: #fafbfc;
-}
-
-button.add {
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background .2s;
-}
-
-button.add:hover {
-    background: var(--primary-dark);
-}
-
-/* ---------- 合并区 ---------- */
-.merge-area {
-    flex: 1;
-    margin: 24px;
-    padding: 16px;
-    border: 1px dashed var(--border);
+    position: relative;
+    padding: 4px 14px 4px 38px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 8px;
-    background: #fafbfc;
+    background: rgba(255, 255, 255, 0.75);
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.4;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.material-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+    background: #f5f8ff;
+}
+.material-btn.selected {
+    background: rgba(79, 124, 255, 0.12);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(79, 124, 255, 0.4);
+}
+
+/* 勾选框 */
+.material-btn .check {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+.material-btn.selected .check {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: 0 0 6px 2px rgba(79, 124, 255, 0.6);
+}
+.material-btn.selected .check::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* ---------- 合并结果 纸带 ----------
+--------------------------------------------------
+/* ---------- 合并结果 纸带 ---------- */
+#mergedContent {
+    background: #fafbfc;
+    background-image: repeating-linear-gradient(
+        180deg,
+        transparent,
+        transparent 28px,
+        rgba(0, 0, 0, 0.03) 28px,
+        rgba(0, 0, 0, 0.03) 29px
+    );
+    font-family: 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 29px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.03);
+    margin: 24px;
+    flex: 1;
+    overflow: auto;
     white-space: pre-wrap;
     word-break: break-all;
-    overflow: auto;
 }
 
-/* ---------- 按钮栏 ---------- */
+/* ---------- 按钮栏胶囊 ---------- */
 .btn-bar {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0 24px 24px;
 }
-
 .btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
+    padding: 6px 18px;
     border: none;
-    border-radius: 6px;
+    border-radius: 20px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all .2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .primary {
     background: var(--primary);
     color: #fff;
 }
-
 .primary:hover {
     background: var(--primary-dark);
 }
-
 .secondary {
     background: var(--border);
     color: var(--text-main);
 }
-
 .secondary:hover {
     background: #dfe1e7;
 }
-
 .feedback {
     font-size: 14px;
     color: #2ecc71;
     margin-left: 4px;
-}
-
-/* ===== 左侧按钮统一尺寸 ===== */
-button.add {
-    width: 120px;
-    /* 统一宽度，想再宽自己调 */
-    height: 42px;
-    /* 统一高度 */
-    padding: 0;
-    /* 去掉左右 padding，让文字完全居中 */
-    line-height: 20px;
-    /* 文字垂直居中 */
-    text-align: center;
-    border: none;
-    border-radius: 6px;
-    background: #4f7cff;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(79, 124, 255, .24);
-    transition: all .2s ease;
-}
-
-button.add:hover {
-    background: #3b68ef;
-    box-shadow: 0 4px 10px rgba(79, 124, 255, .34);
-}
-
-button.add.selected {
-    background: #ff6e2c;
-    box-shadow: 0 2px 6px rgba(255, 110, 44, .30);
 }
