@@ -1,4 +1,4 @@
-/* ---------- 变量 ---------- */
+/* ---------- CSS 变量 ---------- */
 :root {
     --primary: #4f7cff;
     --primary-dark: #3b68ef;
@@ -10,7 +10,7 @@
     --font: 'Inter', sans-serif;
 }
 
-/* ---------- 全局 ---------- */
+/* ---------- 全局基础 ---------- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -33,7 +33,7 @@ body {
     padding: 16px;
 }
 
-/* ---------- 玻璃卡片 ---------- */
+/* ---------- 玻璃卡片面板 ---------- */
 .panel {
     background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(12px) saturate(180%);
@@ -47,12 +47,8 @@ body {
     max-width: 800px;
     margin: auto;
 }
-.left {
-    flex: 1.2;
-}
-.right {
-    flex: 1;
-}
+.left { flex: 1.2; }
+.right { flex: 1; }
 
 /* ---------- 标题彩条 ---------- */
 .panel-header {
@@ -67,25 +63,16 @@ body {
     font-weight: 600;
     margin-left: 8px;
 }
-.icon {
-    font-size: 22px;
-    color: #fff;
-}
+.icon { font-size: 22px; color: #fff; }
 
-/* 材料蓝 */
 .panel.left .sub-panel:nth-of-type(1) .panel-header {
     background: linear-gradient(135deg, #a1b8ff 0%, #5d4cfc 100%);
-    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.06);
 }
-/* 成品绿 */
 .panel.left .sub-panel:nth-of-type(2) .panel-header {
     background: linear-gradient(135deg, #a2ffc9 0%, #1abc9c 100%);
-    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.06);
 }
-/* 合并灰 */
 .panel.right .panel-header {
     background: linear-gradient(135deg, #a2a9b3 0%, #42464c 100%);
-    box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* ---------- 左侧两栏 ---------- */
@@ -109,11 +96,12 @@ body {
     align-content: start;
 }
 
-/* ---------- 悬浮瓷片按钮 ---------- */
+/* ---------- 按钮三件套（瓷片+勾选框+标签） ---------- */
 .material-btn {
-    text-align: left;
     position: relative;
-    padding: 4px 14px 4px 38px;
+    display: flex;
+    align-items: flex-start;   /* 上对齐 */
+    padding: 6px 8px 6px 38px; /* 左侧留空给勾选框 */
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.75);
@@ -122,6 +110,9 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;            /* 文字靠左 */
+    word-break: break-word;      /* 长单词断开换行 */
+    white-space: normal;
 }
 .material-btn:hover {
     transform: translateY(-2px);
@@ -130,7 +121,6 @@ body {
     background: #f5f8ff;
 }
 .material-btn.selected {
-    background: rgba(79, 124, 255, 0.12);
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(79, 124, 255, 0.4);
 }
@@ -139,8 +129,7 @@ body {
 .material-btn .check {
     position: absolute;
     left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 10px;                    /* 固定上偏移，避免换行后错位 */
     width: 18px;
     height: 18px;
     border: 2px solid var(--border);
@@ -166,9 +155,28 @@ body {
     transform: rotate(45deg);
 }
 
-/* ---------- 合并结果 纸带 ----------
---------------------------------------------------
-/* ---------- 合并结果 纸带 ---------- */
+/* 标签条 */
+.tag-bar {
+    display: flex;
+    gap: 1px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+.tag {
+    font-size: 10px;
+    line-height: 1;
+    padding: 1px 2px;
+    border-radius: 6px;
+    color: #fff;
+    background: var(--tag-bg, #888);
+    white-space: nowrap;
+}
+.tag[data-color="red"]  { --tag-bg: #ff0000; }
+.tag[data-color="blue"]  { --tag-bg: #4f7cff; }
+.tag[data-color="green"] { --tag-bg: #2ecc71; }
+.tag[data-color="orange"]{ --tag-bg: #ff8c00; }
+
+/* ---------- 合并结果纸带 ---------- */
 #mergedContent {
     background: #fafbfc;
     background-image: repeating-linear-gradient(
@@ -210,22 +218,8 @@ body {
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.primary {
-    background: var(--primary);
-    color: #fff;
-}
-.primary:hover {
-    background: var(--primary-dark);
-}
-.secondary {
-    background: var(--border);
-    color: var(--text-main);
-}
-.secondary:hover {
-    background: #dfe1e7;
-}
-.feedback {
-    font-size: 14px;
-    color: #2ecc71;
-    margin-left: 4px;
-}
+.primary { background: var(--primary); color: #fff; }
+.primary:hover { background: var(--primary-dark); }
+.secondary { background: var(--border); color: var(--text-main); }
+.secondary:hover { background: #dfe1e7; }
+.feedback { font-size: 14px; color: #2ecc71; margin-left: 4px; }

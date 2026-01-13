@@ -19,14 +19,49 @@ class MaterialManager {
     }
 
     renderTable() {
-        this.config.contents.forEach((t, i) => this.makeButton(t, this.config.buttonNames[i], this.buttonWall));
-        FINISH_CONFIG.contents.forEach((t, i) => this.makeButton(t, FINISH_CONFIG.buttonNames[i], this.finishWall));
+       
+        // 材料参数按钮 + 标签
+        this.config.contents.forEach((t, i) =>
+            this.makeButton(t, this.config.buttonNames[i], this.buttonWall, this.config, i)
+        );
+
+        // 成品参数按钮 + 标签
+        FINISH_CONFIG.contents.forEach((t, i) =>
+            this.makeButton(t, FINISH_CONFIG.buttonNames[i], this.finishWall, FINISH_CONFIG, i)
+        );
     }
 
-    makeButton(text, name, container) {
+    makeButton(text, name, container, cfg, idx){
         const btn = document.createElement('button');
         btn.className = 'material-btn';
-        btn.innerHTML = `<span class="check"></span>${name}`;
+
+        /* 勾选框 */
+        const check = document.createElement('span');
+        check.className = 'check';
+
+        /* 右侧内容区 */
+        const content = document.createElement('div');
+        content.className = 'btn-content';
+        content.innerHTML = `<span class="btn-text">${name}</span>`;
+
+        /* 标签条 */
+        const tagBar = document.createElement('div');
+        tagBar.className = 'tag-bar';
+        (cfg.tags?.[idx] || []).forEach(t => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = t;
+            // 简单换色：把“环保|blue”这种写法拆开
+            if (t.includes('|')) {
+                const [txt, color] = t.split('|');
+                tag.textContent = txt;
+                tag.dataset.color = color;
+            }
+            tagBar.appendChild(tag);
+        });
+        content.appendChild(tagBar);
+
+        btn.append(check, content);
         btn.addEventListener('click', () => this.toggleMerge(text, btn));
         container.appendChild(btn);
     }
