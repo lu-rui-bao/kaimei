@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 小工具集合</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo-section {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 60px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: white;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1em;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #f8c50d;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f8c50d 0%, #ffb700 100%);
+            border: none;
+            border-radius: 10px;
+            color: #0f2027;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(248, 197, 13, 0.4);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .divider span {
+            background: rgba(15, 32, 39, 0.8);
+            padding: 0 15px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            position: relative;
+        }
+
+        .access-code {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .access-code:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #f8c50d;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            h2 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <img src="img\凯美商标 - 副本.gif" alt="Logo" style="float:left; margin:0 20px 20px 0; width:60px; height:auto;">
+            <h2>访问验证</h2>
+            <p class="subtitle">请输入访问码继续使用</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="accessCode">访问码</label>
+                <input type="password" id="accessCode" name="accessCode" placeholder="请输入访问码" required>
+            </div>
+
+            <div class="error-message" id="errorMessage">访问码错误，请重试</div>
+
+            <button type="submit" class="login-button">验证并进入</button>
+        </form>
+
+        
+
+        <button class="access-code" onclick="showHint()">忘记访问码？</button>
+
+        
+    </div>
+
+    <script>
+        // 预设的访问码 - 你可以修改成自己的
+        const CORRECT_ACCESS_CODE = 'kaimei2026';
+        
+        // 尝试次数限制
+        let attemptCount = 0;
+        const MAX_ATTEMPTS = 5;
+
+        // 登录表单提交处理
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const enteredCode = document.getElementById('accessCode').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // 检查尝试次数
+            if (attemptCount >= MAX_ATTEMPTS) {
+                errorMessage.textContent = '尝试次数过多，请稍后再试';
+                errorMessage.style.display = 'block';
+                document.getElementById('accessCode').disabled = true;
+                document.querySelector('.login-button').disabled = true;
+                return;
+            }
+            
+            if (enteredCode === CORRECT_ACCESS_CODE) {
+                // 验证成功，设置sessionStorage标记
+                sessionStorage.setItem('accessGranted', 'true');
+                sessionStorage.setItem('accessTime', new Date().getTime());
+                
+                // 跳转到主页面
+                window.location.href = 'index.html';
+            } else {
+                // 验证失败
+                attemptCount++;
+                errorMessage.textContent = `访问码错误，还剩 ${MAX_ATTEMPTS - attemptCount} 次机会`;
+                errorMessage.style.display = 'block';
+                
+                // 清空输入框
+                document.getElementById('accessCode').value = '';
+                document.getElementById('accessCode').focus();
+            }
+        });
+
+        // 显示提示
+        function showHint() {
+            alert('提示：访问码是公司名称拼音+今年年份\n请联系管理员获取正确访问码');
+        }
+
+        // 检查是否已经登录
+        window.addEventListener('load', function() {
+            const accessGranted = sessionStorage.getItem('accessGranted');
+            const accessTime = sessionStorage.getItem('accessTime');
+            
+            if (accessGranted === 'true' && accessTime) {
+                const currentTime = new Date().getTime();
+                const timeDiff = currentTime - parseInt(accessTime);
+                
+                // 24小时内有效
+                if (timeDiff < 24 * 60 * 60 * 1000) {
+                    // 已登录且未过期，直接跳转到主页面
+                    window.location.href = 'index.html';
+                } else {
+                    // 已过期，清除sessionStorage
+                    sessionStorage.removeItem('accessGranted');
+                    sessionStorage.removeItem('accessTime');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

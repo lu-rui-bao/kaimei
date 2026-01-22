@@ -1,6 +1,41 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 
+<script>
+// 在页面加载时检查访问权限
+window.addEventListener('load', function() {
+    const accessGranted = sessionStorage.getItem('accessGranted');
+    const accessTime = sessionStorage.getItem('accessTime');
+    
+    if (!accessGranted || !accessTime) {
+        // 未登录，跳转到登录页面
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const currentTime = new Date().getTime();
+    const timeDiff = currentTime - parseInt(accessTime);
+    
+    // 检查是否过期（24小时）
+    if (timeDiff >= 24 * 60 * 60 * 1000) {
+        // 已过期，清除数据并跳转登录
+        sessionStorage.removeItem('accessGranted');
+        sessionStorage.removeItem('accessTime');
+        window.location.href = 'login.html';
+    }
+    
+    // 用户可以正常访问页面
+    console.log('访问验证通过');
+});
+
+// 添加登出功能（可选）
+function logout() {
+    sessionStorage.removeItem('accessGranted');
+    sessionStorage.removeItem('accessTime');
+    window.location.href = 'login.html';
+}
+</script>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -116,7 +151,7 @@
 <body>
 
     <div class="container">
-        <img src="img\凯美商标 - 副本.gif" alt="Logo" style="float:left; margin:0 20px 20px 0; width:80px; height:auto;">
+        <img src="img\凯美商标 - 副本.gif" alt="Logo" style="float:left; margin:0 20px 20px 0; width:60px; height:auto;">
 
         <h1>🛠️ 小工具集合</h1>
         <p class="subtitle">简单易用的在线工具箱</p>
@@ -125,7 +160,7 @@
             <a href="parameter\index.html" class="tool-card">
                 <div class="tool-icon">📊</div>
                 <div class="tool-name">技术参数辅助</div>
-                <div class="tool-desc">参数合并小助手V1.02</div>
+                <div class="tool-desc">参数合并小助手</div>
             </a>
 
             <a href="score\index.html" class="tool-card">
@@ -151,7 +186,7 @@
                 <div class="tool-desc">凯美产品信息查询</div>
             </a>
 
-            <a href="Promotion Plan\index.html" class="tool-card">
+            <a href="" class="tool-card">
                 <div class="tool-icon">
                     <?xml version="1.0" encoding="UTF-8"?><svg width="52px" height="52px" viewBox="0 0 24 24"
                         stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#f8c50d">
@@ -176,8 +211,4 @@
     </div>
 </body>
 
-
 </html>
-
-
-
