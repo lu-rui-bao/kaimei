@@ -1,46 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<script>
-// 在页面加载时检查访问权限
-window.addEventListener('load', function() {
-    const accessGranted = sessionStorage.getItem('accessGranted');
-    const accessTime = sessionStorage.getItem('accessTime');
-    
-    if (!accessGranted || !accessTime) {
-        // 未登录，跳转到登录页面
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    const currentTime = new Date().getTime();
-    const timeDiff = currentTime - parseInt(accessTime);
-    
-    // 检查是否过期（24小时）
-    if (timeDiff >= 24 * 60 * 60 * 1000) {
-        // 已过期，清除数据并跳转登录
-        sessionStorage.removeItem('accessGranted');
-        sessionStorage.removeItem('accessTime');
-        window.location.href = 'login.html';
-    }
-    
-    // 用户可以正常访问页面
-    console.log('访问验证通过');
-});
-
-// 添加登出功能（可选）
-function logout() {
-    sessionStorage.removeItem('accessGranted');
-    sessionStorage.removeItem('accessTime');
-    window.location.href = 'login.html';
-}
-</script>
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小工具集合</title>
     <style>
+        /* 添加加载遮罩层样式 */
+        .loading-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #f8c50d;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 原有样式保持不变 */
         * {
             margin: 0;
             padding: 0;
@@ -147,10 +143,14 @@ function logout() {
         }
     </style>
 </head>
-
 <body>
+    <!-- 添加加载遮罩层 -->
+    <div class="loading-mask" id="loadingMask">
+        <div class="loading-spinner"></div>
+        <div>验证访问权限中...</div>
+    </div>
 
-    <div class="container">
+    <div class="container" id="mainContent" style="display: none;">
         <img src="img\凯美商标 - 副本.gif" alt="Logo" style="float:left; margin:0 20px 20px 0; width:60px; height:auto;">
 
         <h1>🛠️ 小工具集合</h1>
@@ -160,7 +160,7 @@ function logout() {
             <a href="parameter\index.html" class="tool-card">
                 <div class="tool-icon">📊</div>
                 <div class="tool-name">技术参数辅助</div>
-                <div class="tool-desc">参数合并小助手</div>
+                <div class="tool-desc">参数合并小助手V1.03</div>
             </a>
 
             <a href="score\index.html" class="tool-card">
@@ -172,7 +172,7 @@ function logout() {
             <a href="product\index.html" class="tool-card">
                 <div class="tool-icon">
                     <?xml version="1.0" encoding="UTF-8"?><svg width="52px" height="52px" stroke-width="1.5"
-                        viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#f8c50d">
+                        viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg " color="#f8c50d">
                         <path d="M7 12L17 12" stroke="#f8c50d" stroke-width="1.5" stroke-linecap="round"
                             stroke-linejoin="round"></path>
                         <path d="M7 8L13 8" stroke="#f8c50d" stroke-width="1.5" stroke-linecap="round"
@@ -186,10 +186,10 @@ function logout() {
                 <div class="tool-desc">凯美产品信息查询</div>
             </a>
 
-            <a href="" class="tool-card">
+            <a href="login.html" class="tool-card">
                 <div class="tool-icon">
                     <?xml version="1.0" encoding="UTF-8"?><svg width="52px" height="52px" viewBox="0 0 24 24"
-                        stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#f8c50d">
+                        stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg " color="#f8c50d">
                         <path
                             d="M8.5 4H6C4.89543 4 4 4.89543 4 6V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V6C20 4.89543 19.1046 4 18 4H15.5"
                             stroke="#f8c50d" stroke-width="1.5" stroke-linecap="round"></path>
@@ -198,8 +198,8 @@ function logout() {
                             stroke="#f8c50d" stroke-width="1.5" stroke-linecap="round"></path>
                     </svg>
                 </div>
-                <div class="tool-name">开发中</div>
-                <div class="tool-desc"></div>
+                <div class="tool-name">重新登录</div>
+                <div class="tool-desc">切换用户或重新验证</div>
             </a>
         </div>
 
@@ -209,6 +209,44 @@ function logout() {
             </p>
         </div>
     </div>
-</body>
 
+    <script>
+        // 立即执行的登录检查函数
+        function checkAccess() {
+            const accessGranted = sessionStorage.getItem('accessGranted');
+            const accessTime = sessionStorage.getItem('accessTime');
+            
+            if (!accessGranted || !accessTime) {
+                // 未登录，立即跳转
+                window.location.replace('login.html');
+                return false;
+            }
+            
+            const currentTime = new Date().getTime();
+            const timeDiff = currentTime - parseInt(accessTime);
+            
+            // 检查是否过期（24小时）
+            if (timeDiff >= 24 * 60 * 60 * 1000) {
+                // 已过期，清除数据并跳转
+                sessionStorage.removeItem('accessGranted');
+                sessionStorage.removeItem('accessTime');
+                window.location.replace('login.html');
+                return false;
+            }
+            
+            // 验证通过，显示内容
+            return true;
+        }
+
+        // 页面加载时立即检查
+        if (!checkAccess()) {
+            // 如果检查失败，阻止页面继续渲染
+            document.documentElement.style.display = 'none';
+        } else {
+            // 验证通过，隐藏加载遮罩，显示主内容
+            document.getElementById('loadingMask').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+        }
+    </script>
+</body>
 </html>
